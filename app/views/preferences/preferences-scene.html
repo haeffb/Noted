@@ -1,0 +1,139 @@
+<div class='palm-scene'>
+	<div class="palm-header" id="prefsHeader">Preferences</div>
+	<div class='header-ico' id='header-icon'></div>
+	<div class="palm-header-spacer"></div>
+		
+<!-- **** Application prefs **** -->
+		<div class="palm-group">
+			<div class="palm-group-title" x-mojo-loc='' id="appOptionsTitle">Application Settings</div>
+			<div class="palm-list">
+				<div class="palm-row first">
+					<div class="palm-row-wrapper">
+					<table class="palm-list-section-label">
+						<tr>
+							<td>
+								<span x-mojo-loc="" class='prefs-label' id='showPreviewLabel'>Enable note view</span>		
+							</td>
+							<td>
+								<div x-mojo-element="ToggleButton" id="showPreviewToggleId"></div>
+							</td>	
+						</tr>
+					</table>
+					</div>
+				</div>
+				<div class="palm-row ">
+					<div class="palm-row-wrapper">
+					<table class="palm-list-section-label">
+						<tr>
+							<td>
+								<span x-mojo-loc="" class='prefs-label' id='allowRotateLabel'>Allow Landscape</span>		
+							</td>
+							<td>
+								<div x-mojo-element="ToggleButton" id="allowRotateToggleId" class="togglebuttonClass"></div>
+							</td>	
+						</tr>
+					</table>
+					</div>
+				</div>
+				<div class="palm-row last">
+					<div class="palm-row-wrapper">
+						<div x-mojo-element="ListSelector" id="BGColorSelectorId" class="prefs-label"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+<!---------------- Sync Prefs ---------------------->
+		<div class="palm-group">
+			<div class="palm-group-title" x-mojo-loc='' id="syncOptionsTitle">Sync Settings</div>
+			<div class="palm-list">
+				<div class="palm-row first">
+					<div class="palm-row-wrapper">
+					<table class="palm-list-section-label">
+						<tr>
+							<td>
+								<span x-mojo-loc="" class='prefs-label' id='localWinsLabel'></span>		
+							</td>
+							<td>
+								<div x-mojo-element="ToggleButton" id="localWinsToggleId" class="togglebuttonClass"></div>
+							</td>	
+						</tr>
+					</table>
+					</div>
+				</div>
+				<div class="palm-row">
+					<div class="palm-row-wrapper">
+					<table class="palm-list-section-label">
+						<tr>
+							<td>
+								<span x-mojo-loc="" class='prefs-label' id='syncOnStartLabel'></span>		
+							</td>
+							<td>
+								<div x-mojo-element="ToggleButton" id="syncOnStartToggleId" class="togglebuttonClass"></div>
+							</td>	
+						</tr>
+					</table>
+					</div>
+				</div>
+				<div class="palm-row">
+					<div class="palm-row-wrapper">
+					<table class="palm-list-section-label">
+						<tr>
+							<td>
+								<span x-mojo-loc="" class='prefs-label' id='syncOnQuitLabel'></span>		
+							</td>
+							<td>
+								<div x-mojo-element="ToggleButton" id="syncOnQuitToggleId" class="togglebuttonClass"></div>
+							</td>	
+						</tr>
+					</table>
+					</div>
+				</div>
+				<div class="palm-row">
+					<div class="palm-row-wrapper">
+					<table class="palm-list-section-label">
+						<tr>
+							<td>
+								<span x-mojo-loc="" class='prefs-label' id='syncOnIntervalLabel'></span>		
+							</td>
+							<td>
+								<div x-mojo-element="ToggleButton" id="syncOnIntervalToggleId" class="togglebuttonClass"></div>
+							</td>	
+						</tr>
+					</table>
+					</div>
+				</div>			
+				<div class="palm-row last">
+					<div class="palm-row-wrapper">
+					<table class="palm-list-section-label">
+						<tr>
+							<td>
+								<span x-mojo-loc="" class='prefs-label' id='syncWifiOnlyLabel'></span>		
+							</td>
+							<td>
+								<div x-mojo-element="ToggleButton" id="syncWifiOnlyToggleId" class="togglebuttonClass"></div>
+							</td>	
+						</tr>
+					</table>
+					</div>
+				</div>
+			</div>
+	
+		</div>
+		<div class="palm-group">
+			<div class="palm-group-title" x-mojo-loc='' id="accountOptionsTitle">Account Settings</div>
+			<div class="palm-list">
+				<div class="palm-row first">
+					<div class="palm-row-wrapper">
+						<div id="AccountId" class="repeatfrom palm-body-text truncating-text "></div>
+					</div>
+				</div>
+				<div class="palm-row last">
+					<div class="palm-row-wrapper">
+						<div id="EditAccountButtonId" name="EditAccountButton" x-mojo-element="Button"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		
+</div>

@@ -1,0 +1,38 @@
+<div class="palm-scene palm-hasheader">
+	<div class='palm-header left' id='noteslist-header' x-mojo-tap-hilight='immediate'>
+			<div class="palm-header-wrapper">
+<!--				<div class="header-icon"></div> -->
+				<div class="header-icon"></div>
+				<div id='header-menu-button-dir' class="header-menu-button header-menu-button-right" x-mojo-touch-feedback="immediate">
+					<div class="header-menu-wrapper">
+<!--						<span id='sort-dir' class="">DESC</span> -->
+<!--						<div id='sort-dir' class='header-menu-dir-down'></div> -->
+						<div id='sort-dir' class='sort-direction-down'></div>
+					</div>
+				</div>
+				<div id='header-menu-button' class="header-menu-button" x-mojo-touch-feedback="immediate">
+					<div class="header-menu-wrapper">
+						<span id='sort-order' class="">Modified</span>
+					</div>
+				</div>
+				<div class="truncating-text header-left" id="noteslist-title" x-mojo-loc=''>Noted!</div>	
+			</div>
+	</div>
+	<div id="header-spacer" class="palm-header-spacer"></div>
+	<div id='debugOutput'> </div>
+	<div id='syncLog' class='sync-output palm-body-text'></div>
+ 	<div id ='Scrim' class='palm-scrim'>
+		<div id='scrimOutput' class='sync-output palm-body-text'></div>
+		<div id='Spinner' x-mojo-element='Spinner' class='palm-activity-indicator-large'></div>
+	</div>
+	<div id='bgcolor' class='bgcolor'></div>
+	<div id='notes-list' class="palm-list">
+			<div id='noteslist' x-mojo-element="FilterList"></div>
+	</div>
+	
+	<div id="syncStats" class="last-sync-stats-wrapper">
+		<div class="last-sync-stats">
+		Last Sync:
+		</div> 
+	</div>
+</div>

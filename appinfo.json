@@ -1,0 +1,27 @@
+{
+	"id": "com.tigers.beta.noted",
+	"title": "Noted! beta",
+	"icon": "notedb.png",
+	"version": "0.1.3",
+	"vendor": "Tiger Country Software",
+	"copy": "&copy; Copyright 2010 Brian A. Haeffner.",
+	"type": "web",
+	"main": "index.html",
+	"keywords": ["notes", "note", "memo", "memos"],
+	"noWindow": "true",
+ 	"universalSearch" : {
+		"action" :  { 
+			"displayName" : "New note in Noted!",
+			"url"         : "com.tigers.beta.noted",
+			"launchParam" : {"action" :"addnote", "note" : "#{searchTerms}"}
+		},
+		"search" :  { 
+			"displayName" 	: "Search Noted!",
+			"url" 			: "com.tigers.beta.noted",
+			"launchParam" 	: {
+				"action":"search",
+				"params":{"type":"query","search":"#{searchTerms}"}
+			}
+		}                                                                
+	}
+}

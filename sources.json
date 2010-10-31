@@ -1,0 +1,31 @@
+[
+    {"source": "app/models/base64.js"},
+    {"source": "app/models/utils.js"},
+    {"source": "app/models/debug.js"},
+    {"source": "app/models/simplenote2api.js"},
+    {"source": "app/models/data.js"},
+    {"source": "app/models/sync2api.js"},
+    {"source": "app/models/php2js.js"},
+    {"source": "app/assistants/app-assistant.js"},
+    {
+        "scenes": "noteslist",
+        "source": "app/assistants/noteslist-assistant.js"
+    },
+    {
+        "scenes": "editnote",
+        "source": "app/assistants/editnote-assistant.js"
+    },
+    {
+        "scenes": "accounts",
+        "source": "app/assistants/accounts-assistant.js"
+    },
+    {"source": "app/models/support_info.js"},
+    {
+        "scenes": "support",
+        "source": "app/assistants/support-assistant.js"
+    },
+    {
+        "scenes": "preferences",
+        "source": "app/assistants/preferences-assistant.js"
+    }
+]
