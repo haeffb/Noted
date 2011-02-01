@@ -66,13 +66,18 @@ function API(){
 
 	};
 	
-	this.getNotesIndex = function (inCallback, bookMark) {
+	this.getNotesIndex = function (inCallback, bookMark, since) {
 		Mojo.Log.info("bookMark", bookMark);
 		Mojo.Log.info("Key in getNotesIndex:", this.key);
 		var url = this.url2 + 'index?auth=' + this.key + '&email=' + MyAPP.prefs.email;
+		url += "&length=100";
 		if (bookMark) {
 			Mojo.Log.info("bookMark", bookMark);
 			url += '&mark=' + bookMark;
+		}
+		if (since) {
+			Mojo.Log.info("since", since);
+			url += '&since=' + since;
 		}
 		Mojo.Log.info("Url in getNotesIndex:", url);
 		new Ajax.Request( url, {
@@ -111,7 +116,13 @@ function API(){
 				inCallback(note);
 
 			}.bind(this),
-			onFailure: this.hadFailure.bind(this)
+			onFailure: function (error) {
+				// add notekey to error object
+				Mojo.Log.info("Error in API.getNote %j", error);
+				error.notekey = notekey;
+				inCallback(error);
+			}.bind (this)
+			//this.hadFailure.bind(this)
 		});		
 	};
 	
@@ -151,8 +162,12 @@ function API(){
 				note.deleted = note.deleted ? "True" : "False";
 				note.custom = '';
 				inCallback(note);
-			}.bind(this)			,
-			onFailure: this.hadFailure.bind(this)
+			}.bind(this),
+			onFailure: function(error){
+				error.notekey = note.key;
+				inCallback(error);
+			}.bind(this)
+			//this.hadFailure.bind(this)
 		});
 	};
 	
@@ -194,7 +209,11 @@ function API(){
 				//Mojo.Log.info("API response in updateNote: %j", response.responseJSON);
 				inCallback(response.responseJSON);
 			}.bind(this)			,
-			onFailure: this.hadFailure.bind(this)
+			onFailure: function(error){
+				error.notekey = note.key;
+				inCallback(error);
+			}.bind(this)
+			//this.hadFailure.bind(this)
 		});
 	};
 	

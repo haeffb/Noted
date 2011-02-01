@@ -90,6 +90,7 @@ function Sync(){
 			}
 			var index = response.responseJSON;
 			Mojo.Log.info("Index in GotNotesIndex %j", index);
+			debugObject(index, "noFuncs");
 			
 			var i, d, lastSyncUTC;
 			

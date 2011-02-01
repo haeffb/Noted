@@ -23,13 +23,15 @@ MyAPP.prefs = {
 	syncOnStart: false,
 	syncOnQuit: false,
 	syncOnInterval: false,
-	syncInterval: 1,  // 30 minutes for auto-sync
+	syncInterval: 30,  // 30 minutes for auto-sync
 	syncTimerId: '',
 	syncWifiOnly: false,
 	allowRotate: false,
 	color: 0,
 	sortOrder: "1",
-	sortDir: "DESC"
+	sortDir: "DESC",
+	tagFilter: 0,
+	tagFilterLabel: "All Tags"
 };
 
 MyAPP.debug = true;

@@ -50,14 +50,64 @@ function Sync(){
 		this.webIndex = []; // array of keys for web notes - check against local for deleted web notes	
 		
 		// Delete notes from server
-		var sqlString = "SELECT * FROM notes WHERE deleted='True'; GO;";
+		//var sqlString = "SELECT * FROM notes WHERE deleted='True'; GO;";
 		//dao.retrieveNotesByString(sqlString, this.gotDeletedNotes.bind(this));	
 		
-		api.getNotesIndex(this.gotNotesIndex.bind(this), null);
+		// Get locally modified notes
+		var sqlString = "SELECT * FROM notes WHERE modified > " +
+		MyAPP.prefs.lastSync +
+		" AND key != 0; GO;";
+		//" AND key != 0 AND deleted = 'False'; GO;";
+		//Mojo.Log.info("SQL for mod notes: ", sqlString);
+		dao.retrieveNotesByString(sqlString, this.gotLocalNotesModified.bind(this));
+
+
 		//this.finishTransactions('notesdeleted');
 				
 	};
+
+	this.gotLocalNotesModified = function (localNotes) {
+		this.localNotesModified = localNotes;
+		this.syncLocalToWeb();
+	};
 	
+	this.syncLocalToWeb = function () {
+		var i;
+		Mojo.Log.info("Sending Modified Notes to Web: ", this.localNotesModified.length);
+		this.syncLog += "<br />" + $L("Sending Modified Notes to Web") 
+			+ ": " + this.localNotesModified.length +$L(" notes");
+		if (this.outputDiv) {
+			this.outputDiv.innerHTML += "<br />" + $L("Sending Modified Notes to Web") 
+			+ ": " + this.localNotesModified.length +$L(" notes");
+		}
+		if (this.localNotesModified.length) {
+			for (i = 0; i < this.localNotesModified.length; i++) {
+				this.count.localmodified += 1;
+				api.updateNote(this.localNotesModified[i], this.localToWebUpdated.bind(this, this.localNotesModified[i]));
+/*
+				if (this.localNotesModified[i].sync || MyAPP.prefs.localWins) {
+					api.updateNote(this.localNotesModified[i], this.localToWebUpdated.bind(this, this.localNotesModified[i]));
+				}
+				else {
+					this.finishTransactions('localmodified');
+				}
+
+*/
+			}
+		}
+		else {
+			this.finishTransactions('localmodified');
+		}
+		
+		//Get new local notes and send to web
+		var sqlString = "SELECT * FROM notes WHERE key = 0; GO;";
+		dao.retrieveNotesByString(sqlString, this.syncNewLocalToWeb.bind(this));
+		
+	};
+	
+
+	
+/*
 	this.gotDeletedNotes = function (deletedNotes) {
 		
 		//Mojo.Log.info("Deleting Notes: ", deletedNotes.length);
@@ -97,7 +147,8 @@ function Sync(){
 			this.finishTransactions('notesdeleted');
 		}	
 	};
-	
+
+*/	
 	
 	this.gotToken = function (response) {
 		if (response.status === 200 && response.responseText) {
@@ -107,7 +158,7 @@ function Sync(){
 				function (event) {
 					//Mojo.Log.info("Prefs DB failure %j", event);
 			});
-			api.getNotesIndex(this.gotNotesIndex.bind(this));
+			api.getNotesIndex(this.gotNotesIndex.bind(this), null, this.lastSyncServer);
 		}
 		else {
 			//Mojo.Log.info("Error getting Token %j", response);
@@ -130,14 +181,15 @@ function Sync(){
 			api.getTokenLogin(MyAPP.prefs.email, MyAPP.prefs.password, this.gotToken.bind(this));
 		}
 		else {
+			var index = response.responseJSON;
 			this.syncLog += "<br />" +
-			$L("Retrieved Notes Index");
+			$L("Retrieved Notes Index: ") + index.count + $L(" notes");
 			if (this.outputDiv) {
 				this.outputDiv.innerHTML += "<br />" +
-				$L("Retrieved Notes Index");
+				$L("Retrieved Notes Index: ")+ index.count + $L(" notes");
 			}
-			var index = response.responseJSON;
 			Mojo.Log.info("Index in GotNotesIndex %j", index);
+			debugObject(index, 'noFuncs');
 			Mojo.Log.info("Bookmark in GotNotesIndex", index.mark);
 			Mojo.Log.info("Time in GotNotesIndex", new Date(index.time * 1000));
 			MyAPP.prefs.lastSyncServer = index.time;
@@ -148,95 +200,34 @@ function Sync(){
 			//Mojo.Log.info("Last Sync", d);
 			//d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
 			//Mojo.Log.info("Last Sync UTC", d);
-			lastSyncUTC = this.lastSyncServer * 1000; //d.getTime();
+			
+			// Subtract 2 minutes from last sync time because of Simplenote
+			// server time issues...
+			lastSyncUTC = (this.lastSyncServer - 120) * 1000; //d.getTime();
+			
 			for (i = 0; i < index.data.length; i++) {
 				Mojo.Log.info("Note in index:", new Date(index.data[i].modifydate * 1000));
-				if (index.data[i].modifydate * 1000 > lastSyncUTC) {
-					//Note modfied since last sync!
+				if (false) { //(index.data[i].modifydate * 1000 > lastSyncUTC) {
+			//Note modfied since last sync!
 					Mojo.Log.info("lastSync", new Date(lastSyncUTC));
 					Mojo.Log.info("modify", new Date(index.data[i].modifydate * 1000));
 					Mojo.Log.info("pushing %j", index.data[i]);
 					index.data[i].sync = true;
 					this.webNotesModified.push(index.data[i]);
 				}
-				this.webIndex.push(index.data[i].key);
+				this.webNotesModified.push(index.data[i]);
+				//this.webIndex.push(index.data[i].key);
 			}
 			
 			if (index.mark) {
 				//need to retrieve more notes
-				api.getNotesIndex(this.gotNotesIndex.bind(this), index.mark);		
+				api.getNotesIndex(this.gotNotesIndex.bind(this), index.mark, this.lastSyncServer);		
 			}
 			else {
-				// Get locally modified notes
-				var sqlString = "SELECT * FROM notes WHERE modified > " +
-				MyAPP.prefs.lastSync +
-				" AND key != 0; GO;";
-				//" AND key != 0 AND deleted = 'False'; GO;";
-				//Mojo.Log.info("SQL for mod notes: ", sqlString);
-				dao.retrieveNotesByString(sqlString, this.gotLocalNotesModified.bind(this));
+				this.syncWebToLocal();
 			}
 		}
 	};			
-	
-	this.gotLocalNotesModified = function (localNotes) {
-/*
-		var i, j;
-
-			//Mojo.Log.info("Local: %j", localNotes);
-			//Mojo.Log.info("Web:%j", this.webNotesModified);
-
-		for (i = 0; i < localNotes.length; i++) {
-			localNotes[i].sync = true;
-
-			//Mojo.Log.info("Local Note %s %j", i, localNotes[i]);
-			if (localNotes[i].key) {
-				for (j = 0; j < this.webNotesModified.length; j++) {
-					if (localNotes[i].key === this.webNotesModified[j].key) {
-						//Mojo.Log.info("Key in both!");
-						localNotes[i].sync = false;
-						this.webNotesModified[j].sync = false;
-					}
-				}
-			}
-		}
-
-*/		this.localNotesModified = localNotes;
-		this.syncLocalToWeb();
-	};
-	
-	this.syncLocalToWeb = function () {
-		var i;
-		Mojo.Log.info("Sending Modified Notes to Web: ", this.localNotesModified.length);
-		this.syncLog += "<br />" + $L("Sending Modified Notes to Web") 
-			+ ": " + this.localNotesModified.length +$L(" notes");
-		if (this.outputDiv) {
-			this.outputDiv.innerHTML += "<br />" + $L("Sending Modified Notes to Web") 
-			+ ": " + this.localNotesModified.length +$L(" notes");
-		}
-		if (this.localNotesModified.length) {
-			for (i = 0; i < this.localNotesModified.length; i++) {
-				this.count.localmodified += 1;
-				api.updateNote(this.localNotesModified[i], this.localToWebUpdated.bind(this, this.localNotesModified[i]));
-/*
-				if (this.localNotesModified[i].sync || MyAPP.prefs.localWins) {
-					api.updateNote(this.localNotesModified[i], this.localToWebUpdated.bind(this, this.localNotesModified[i]));
-				}
-				else {
-					this.finishTransactions('localmodified');
-				}
-
-*/
-			}
-		}
-		else {
-			this.finishTransactions('localmodified');
-		}
-		
-		//Get new local notes and send to web
-		var sqlString = "SELECT * FROM notes WHERE key = 0; GO;";
-		dao.retrieveNotesByString(sqlString, this.syncNewLocalToWeb.bind(this));
-		
-	};
 	
 	this.localToWebUpdated = function(note, response) {
 		Mojo.Log.info("Local mod note %j", note);
@@ -250,39 +241,49 @@ function Sync(){
 			response.custom = '';
 			dao.updateNote(response, this.noteUpdated.bind(this));
 		}
+		else {
+			// failure in api.updateNote
+			var window = Mojo.Controller.getAppController().getActiveStageController().activeScene().window;
+			Mojo.Controller.errorDialog($L("Error modifying note on server: ") + note.note, window);
+			this.finishTransactions.bind(this, 'localmodified');
+			
+		}
 	};
 	
 	this.noteUpdated = function () {
 		this.finishTransactions('localmodified');
 	};
 	
-	this.syncWebToLocal = function () {
+	this.syncWebToLocal = function(){
 		var i;
 		
 		//Mojo.Log.info("Getting Web Modified Notes: ", this.webNotesModified.length);
-		this.syncLog += "<br />" + $L("Getting Web Modified Notes") 
-			+ ": " + this.webNotesModified.length +$L(" notes");
+		this.syncLog += "<br />" + $L("Getting Web Modified Notes") +
+		": " +
+		this.webNotesModified.length +
+		$L(" notes");
 		if (this.outputDiv) {
-			this.outputDiv.innerHTML += "<br />" + $L("Getting Web Modified Notes") 
-			+ ": " + this.webNotesModified.length +$L(" notes");
+			this.outputDiv.innerHTML += "<br />" + $L("Getting Web Modified Notes") +
+			": " +
+			this.webNotesModified.length +
+			$L(" notes");
 		}
-	
+		
 		if (this.webNotesModified.length) {
 			for (i = 0; i < this.webNotesModified.length; i++) {
 				//Mojo.Log.info("Web Mod Note: %j", this.webNotesModified[i]);
 				if ((this.webNotesModified[i].sync || !MyAPP.prefs.localWins)) {
 					this.count.notes += 1;
 					api.getNote(this.webNotesModified[i].key, this.gotNote.bind(this));
-/*
-					if (!this.webNotesModified[i].deleted) {
-						api.getNote(this.webNotesModified[i].key, this.gotNote.bind(this));
-					}
-					else {
-						dao.deleteNote(this.webNotesModified[i].key, 
-							this.webNoteDeleted.bind(this, this.webNotesModified[i].key));
-					}
-
-*/
+				/*
+				 if (!this.webNotesModified[i].deleted) {
+				 api.getNote(this.webNotesModified[i].key, this.gotNote.bind(this));
+				 }
+				 else {
+				 dao.deleteNote(this.webNotesModified[i].key,
+				 this.webNoteDeleted.bind(this, this.webNotesModified[i].key));
+				 }
+				 */
 				}
 			}
 		}
@@ -290,9 +291,35 @@ function Sync(){
 			this.finishTransactions('notes');
 		}
 		
-		var sqlString = "SELECT key FROM notes WHERE key > 0; GO;";
-		dao.retrieveNotesByString(sqlString, this.webDeleted.bind(this));
+		//retrieve web notes index to compare to local notes - find notes
+		//that have been deleted from web but still on local
+		api.getNotesIndex(this.gotNotesIndexForDeleted.bind(this), null, null);
+	};
+	
+	this.gotNotesIndexForDeleted = function (response) {
 		
+		if (response.status !== 200) {
+			Mojo.Log.info("Error getting index");
+		}
+		else {
+			var index = response.responseJSON;
+			var i, d, lastSyncUTC;
+			
+			for (i = 0; i < index.data.length; i++) {
+				this.webIndex.push(index.data[i].key);
+			}
+			
+			if (index.mark) {
+				//need to retrieve more notes
+				api.getNotesIndex(this.gotNotesIndexForDeleted.bind(this), index.mark, null);
+			}
+			else {
+				//get index of local notes.
+				var sqlString = "SELECT key FROM notes WHERE key > 0; GO;";
+				dao.retrieveNotesByString(sqlString, this.webDeleted.bind(this));
+			}
+		}
+	
 	};
 	
 	this.webNoteDeleted = function (note, response) {
@@ -355,14 +382,20 @@ function Sync(){
 			this.finishTransactions('notesadded');
 		}
 		
-		this.syncWebToLocal();
+		api.getNotesIndex(this.gotNotesIndex.bind(this), null, this.lastSyncServer);
 	};
 	
 	this.newNoteAdded = function (note, response) {
 		Mojo.Log.info("sync.newNoteAdded!");
 		Mojo.Log.info("Local note %j", note);
 		Mojo.Log.info("Response %j", response);	
-		if (response) {
+		if (response.code) {
+			//failure in api.createNote request
+			var window = Mojo.Controller.getAppController().getActiveStageController().activeScene().window;
+			Mojo.Controller.errorDialog($L("Error creating note on server: ") + note.note, window);
+			this.finishTransactions.bind(this, 'notesadded');
+		}
+		else {
 			dao.deleteNote(note.value, function () {
 				//Mojo.Log.info("Old Note Deleted %j", note.value);
 			});
@@ -377,11 +410,29 @@ function Sync(){
 	};
 
 	this.gotNote = function (note) {
-		if (note.createdate < MyAPP.prefs.lastSync) { //(note.deleted === 'False') {
-			dao.updateNote(note, this.finishTransactions.bind(this, 'notes'));
+		if (note.code) {
+			// failure in api.getNote request
+			this.syncError();
+			var window = Mojo.Controller.getAppController().getActiveStageController().activeScene().window;
+			Mojo.Controller.errorDialog($L("Error getting note from server: ") + note.notekey, window);
+			this.finishTransactions.bind(this, 'notes');
 		}
 		else {
-			dao.createNote(note, this.finishTransactions.bind(this, 'notes'));
+			// check to see if note already in database
+			var sqlString;
+			sqlString = "SELECT * FROM notes WHERE key = '" +
+				note.key +
+				"'; GO;";
+			dao.retrieveNotesByString(sqlString, this.checkedNote.bind(this, note));
+		}
+	};
+	
+	this.checkedNote = function (note, response) {
+		if (response.length) {
+			dao.updateNote(note, this.finishTransactions.bind(this, 'notes'));		
+		}	
+		else {
+			dao.createNote(note, this.finishTransactions.bind(this, 'notes'));			
 		}
 	};
 

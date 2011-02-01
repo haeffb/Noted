@@ -14,9 +14,10 @@ function NoteslistAssistant(args) {
 NoteslistAssistant.prototype.setup = function(params) {
 	Mojo.Log.info("NoteslistAssistant setup params %j", params);
 	/* this function is for setup tasks that have to happen when the scene is first created */
-	this.controller.get('noteslist-title').innerHTML = Mojo.appInfo.title;
+	//this.controller.get('noteslist-title').innerHTML = Mojo.appInfo.title;
 	this.controller.get("syncLog").innerHTML = MyAPP.syncLogCookie.get();
 	this.controller.get('sort-order').innerHTML = MyAPP.sortItems[MyAPP.prefs.sortOrder].label;
+	this.controller.get('tag-filter').innerHTML = MyAPP.prefs.tagFilterLabel;
 	if (MyAPP.prefs.sortDir === 'ASC') {
 		var sortNode = this.controller.get('sort-dir');
 		sortNode.toggleClassName('sort-direction-down');
@@ -71,7 +72,14 @@ NoteslistAssistant.prototype.setup = function(params) {
 					{icon: 'new',command: 'doAdd'}
 				]
 			},
+/*
 			{
+				items: [
+					{label: 'All Tags', command: 'doTags'}
+				]
+			},
+
+*/			{
 				items: [
 					{icon: 'sync',command: 'doSync'}
 				]
@@ -105,6 +113,8 @@ NoteslistAssistant.prototype.setup = function(params) {
 
 	this.headerMenuTapHandler = this.headerMenuTap.bindAsEventListener(this);
 	this.controller.listen('header-menu-button', Mojo.Event.tap, this.headerMenuTapHandler);
+	this.headerMenuTagFilterTapHandler = this.headerMenuTagFilterTap.bindAsEventListener(this);
+	this.controller.listen('header-menu-button-tag', Mojo.Event.tap, this.headerMenuTagFilterTapHandler);
 	this.headerMenuDirTapHandler = this.headerMenuDirTap.bindAsEventListener(this);
 	this.controller.listen('header-menu-button-dir', Mojo.Event.tap, this.headerMenuDirTapHandler);
 
@@ -155,6 +165,17 @@ NoteslistAssistant.prototype.headerMenuTap = function (event) {
     });
 };
 
+NoteslistAssistant.prototype.headerMenuTagFilterTap = function (event) {
+	Mojo.Log.info("Tag Filter Tap");
+	this.controller.popupSubmenu({
+        onChoose:this.changeFilter.bind(this),
+        placeNear: event.target,
+		toggleCmd: MyAPP.prefs.tagFilter,
+		title: $L("View by Tag"),
+        items: MyAPP.tagItems
+    });
+};
+
 NoteslistAssistant.prototype.headerMenuDirTap = function (event) {
 	//Mojo.Log.info("Dir tap");
 	var sortNode = this.controller.get('sort-dir');
@@ -176,6 +197,21 @@ NoteslistAssistant.prototype.headerMenuDirTap = function (event) {
 
 };
 
+NoteslistAssistant.prototype.changeFilter = function (command) {
+	Mojo.Log.info("Changing Tag Filter %j", command);
+	if (command !== undefined) {
+		MyAPP.prefs.tagFilter = command;
+		MyAPP.prefs.tagFilterLabel = MyAPP.tagItems[command].label;
+		this.controller.get('tag-filter').innerHTML = MyAPP.prefs.tagFilterLabel;
+		MyAPP.prefsDb.add('prefs', MyAPP.prefs, function(){
+		}, function(event){
+		//Mojo.Log.info("Prefs DB failure %j", event);
+		});
+		
+		this.loadNotes();
+	}
+};
+
 NoteslistAssistant.prototype.changeSort = function (command) {
 	//Mojo.Log.info("Changing sort order", command);
 	if (command) {
@@ -191,6 +227,7 @@ NoteslistAssistant.prototype.changeSort = function (command) {
 	this.filterFunction('', listWidget, 0, this.notes.length);
 
 };
+
 NoteslistAssistant.prototype.sortNotes = function (a, b) {
 	var sort = MyAPP.sortItems[MyAPP.prefs.sortOrder].sort;
 	var dir = (MyAPP.prefs.sortDir === 'DESC') ? -1 : 1;
@@ -212,9 +249,9 @@ NoteslistAssistant.prototype.listDelete = function (event) {
 		});
 	}
 	else {
-		this.notes[event.index].deleted = "True";
-		this.notes[event.index].modified = new Date().getTime();
-		dao.updateNote(this.notes[event.index], function(response){
+		event.item.deleted = "True";
+		event.item.modified = new Date().getTime();
+		dao.updateNote(event.item, function(response){
 			//Mojo.Log.info("Update response %j", response);
 		});
 	}
@@ -336,7 +373,7 @@ NoteslistAssistant.prototype.startSync = function () {
 			method: 'getstatus',
 			parameters: {},
 			onSuccess: function(response){
-				//Mojo.Log.info("Response %j", response);
+				Mojo.Log.info("Response %j", response);
 				if (response.isInternetConnectionAvailable) {
 					if (!MyAPP.prefs.syncWifiOnly ||
 					response.wifi.state === 'connected') {
@@ -356,7 +393,8 @@ NoteslistAssistant.prototype.startSync = function () {
 				}
 				else {
 					//Mojo.Log.info("Internet connection not available!");
-					Mojo.Controller.errorDialog($L("Internet connection not available!"));	
+					var window = Mojo.Controller.getAppController().getActiveStageController().activeScene().window;
+					Mojo.Controller.errorDialog($L("Internet connection not available!"), window);	
 					delete this.connectRequest;
 				}
 			}.bind(this)			,
@@ -485,10 +523,11 @@ NoteslistAssistant.prototype.activate = function(event) {
 };
 
 NoteslistAssistant.prototype.loadNotes = function () {
-	var sqlString = "SELECT * FROM notes; GO;"; // WHERE deleted='False'; GO;";
-		//" ORDER BY " +
-		//MyAPP.sortItems[MyAPP.prefs.sortOrder].sort +
-		//" " + MyAPP.prefs.sortDir + "; GO;";
+	var sqlString = "SELECT * FROM notes"; 
+	if (MyAPP.prefs.tagFilterLabel !== 'All Tags') {
+		sqlString += " WHERE tags LIKE '%" + MyAPP.prefs.tagFilterLabel + "%'";
+	}
+	sqlString += "; GO;";
 	//Mojo.Log.info("sqlString", sqlString);
 	dao.retrieveNotesByString(sqlString, this.gotNotes.bind(this));
 };
@@ -496,7 +535,7 @@ NoteslistAssistant.prototype.loadNotes = function () {
 NoteslistAssistant.prototype.gotNotes = function(response){
 	try {
 	
-		var i, firstCR;
+		var i, firstCR, sqlString;
 		if (response) {
 			this.notes = [];
 			//Mojo.Log.info("Notes from DB: %j", response);
@@ -514,16 +553,40 @@ NoteslistAssistant.prototype.gotNotes = function(response){
 				}
 			}
 		}
+		
 		this.notes.sort(this.sortNotes.bind(this));
 		//Mojo.Log.info("Notes: %j", this.notes);
 		var listWidget = this.controller.get('noteslist');
 		this.filterFunction(this.launchSearchString, listWidget, 0, this.notes.length);
 		this.launchSearchString = '';
+		
+		// load tags from Db
+		sqlString = "SELECT DISTINCT tags AS label FROM notes; GO;"; 
+		dao.retrieveNotesByString(sqlString, this.gotTags.bind(this));
 	}
 	catch (e) {
 		//Mojo.Log.error("Error: %j", e);
 	}
 
+};
+
+NoteslistAssistant.prototype.gotTags = function (results) {
+	Mojo.Log.info("Tag results %j", results);
+	var i, tempArray=[];
+	MyAPP.tagItems = [];
+	
+	for (i = 0; i < results.length; i++) {
+		tempArray = tempArray.concat(results[i].label.split(","));
+	}
+	tempArray = tempArray.uniq();
+	//MyAPP.tagItems = results;
+	for (i = 0; i < tempArray.length; i++) {
+		MyAPP.tagItems[i] = {};
+		MyAPP.tagItems[i].label = tempArray[i];
+		MyAPP.tagItems[i].command = i;
+	}
+	MyAPP.tagItems[0].label = 'All Tags';
+		Mojo.Log.info("Tag Array %j", MyAPP.tagItems);
 };
 
 NoteslistAssistant.prototype.deactivate = function(event) {
@@ -540,6 +603,7 @@ NoteslistAssistant.prototype.cleanup = function(event) {
 	this.controller.stopListening('syncStats', Mojo.Event.tap, this.showSyncOutputHandler);	
 	this.controller.stopListening('header-menu-button', Mojo.Event.tap, this.headerMenuTapHandler);
 	this.controller.stopListening('header-menu-button-dir', Mojo.Event.tap, this.headerMenuDirTapHandler);
+	this.controller.stopListening('header-menu-button-tag', Mojo.Event.tap, this.headerMenuTagFilterTapHandler);
 
 	// cleanup connection request object
 	if (this.connectRequest) {

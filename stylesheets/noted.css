@@ -54,6 +54,15 @@
 .header-menu-button-right {
 	margin-right: -8px;
 }
+.header-menu-button-left {
+	height: 28px;
+	border-width: 0px 15px;
+	-webkit-border-image: url(../images/selector-headerpress-gray.png) 0 15 0 15 stretch stretch;
+	-webkit-border-image: url(../images/selector-header-gray.png) 0 15 0 15 stretch stretch;
+	-webkit-box-sizing: border-box;
+	margin-top: 11px;
+	float: left;
+}
 
 .header-menu-button.selected {
 	-webkit-border-image: url(../images/selector-headerpress-gray.png) 0 15 0 15 stretch stretch;
@@ -92,6 +101,20 @@
 	display: inline-block;
 	z-index: 99999;
 	background: url(../noted_32x32.png) center no-repeat;
+	background: url(../images/tag.png) center no-repeat;
+	float: left;
+}
+
+.header-icon-tags
+	overflow: hidden;
+	width: 32px;
+	height: 32px;
+	margin-top: 8px;
+	vertical-align: top;
+	margin-left: -8px;
+	display: inline-block;
+	z-index: 99999;
+	background: url(../images/tag.png) center no-repeat;
 	float: left;
 }
 
